@@ -1,0 +1,95 @@
+@page "/login"
+@using ExpenseTracker.Shared.DTOs
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Login - Expense Tracker</PageTitle>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0">Login</h3>
+                </div>
+                <div class="card-body p-4">
+                    <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+                        <DataAnnotationsValidator />
+                        
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                @errorMessage
+                            </div>
+                        }
+
+                        <div class="form-floating mb-3">
+                            <InputText id="username" @bind-Value="loginModel.Username" class="form-control" placeholder="Username" />
+                            <label for="username">Username</label>
+                            <ValidationMessage For="@(() => loginModel.Username)" class="text-danger" />
+                        </div>
+
+                        <div class="form-floating mb-4">
+                            <InputText id="password" @bind-Value="loginModel.Password" type="password" class="form-control" placeholder="Password" />
+                            <label for="password">Password</label>
+                            <ValidationMessage For="@(() => loginModel.Password)" class="text-danger" />
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" disabled="@isLoading">
+                                @if (isLoading)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    <span>Logging in...</span>
+                                }
+                                else
+                                {
+                                    <span><i class="bi bi-box-arrow-in-right me-2"></i>Login</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                    
+                    <div class="text-center mt-4">
+                        <p>Don't have an account? <a href="register" class="fw-bold text-primary">Sign up</a></p>
+                        <a href="/" class="btn btn-link">Back to Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private UserLoginDto loginModel = new UserLoginDto();
+    private bool isLoading = false;
+    private string errorMessage = string.Empty;
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            var result = await AuthService.Login(loginModel);
+            if (result != null && result.Success)
+            {
+                NavigationManager.NavigateTo("/expenses");
+            }
+            else
+            {
+                errorMessage = result?.Message ?? "Login failed. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Login failed: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

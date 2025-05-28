@@ -1,0 +1,12 @@
+@page "/token-debugger"
+@inject IWebAssemblyHostEnvironment HostEnvironment
+
+@if (HostEnvironment.IsDevelopment())
+{
+    <TokenDebuggerComponent />
+}
+else
+{
+    <h3>This page is only available in development mode</h3>
+    <a href="/" class="btn btn-primary">Go Home</a>
+}

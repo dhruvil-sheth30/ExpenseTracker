@@ -1,0 +1,172 @@
+@page "/expenses/add"
+@page "/expenses/edit/{Id:int}"
+@attribute [Authorize]
+@using ExpenseTracker.Shared.Models
+@inject IExpenseService ExpenseService
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<PageTitle>@(Id == null ? "Add" : "Edit") Expense - Expense Tracker</PageTitle>
+
+<h3>@(Id == null ? "Add New" : "Edit") Expense</h3>
+
+@if (isLoading)
+{
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading...</p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-6">
+            <EditForm Model="expense" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="form-group mb-3">
+                    <label for="title">Title</label>
+                    <InputText id="title" @bind-Value="expense.Title" class="form-control" />
+                    <ValidationMessage For="@(() => expense.Title)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="amount">Amount</label>
+                    <InputNumber id="amount" @bind-Value="expense.Amount" class="form-control" />
+                    <ValidationMessage For="@(() => expense.Amount)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="date">Date</label>
+                    <InputDate id="date" @bind-Value="expense.Date" class="form-control" />
+                    <ValidationMessage For="@(() => expense.Date)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="category">Category</label>
+                    <InputSelect id="category" @bind-Value="expense.Category" class="form-select">
+                        @foreach (var category in categories)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => expense.Category)" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="description">Description</label>
+                    <InputTextArea id="description" @bind-Value="expense.Description" class="form-control" rows="3" />
+                    <ValidationMessage For="@(() => expense.Description)" />
+                </div>
+
+                <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                    @if (isSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span> Saving...</span>
+                    }
+                    else
+                    {
+                        <span>Save</span>
+                    }
+                </button>
+                <button type="button" class="btn btn-secondary ms-2" @onclick="NavigateBack">Cancel</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private Expense expense = new Expense();
+    private bool isLoading = false;
+    private bool isSaving = false;
+    private List<string> categories = new List<string> 
+    { 
+        "Food", "Transport", "Entertainment", "Utilities", "Health", "Shopping", "Education", "Other" 
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            isLoading = true;
+            try
+            {
+                var loadedExpense = await ExpenseService.GetExpenseByIdAsync(userId: 0, expenseId: Id.Value); // Replace 0 with actual userId
+                if (loadedExpense != null)
+                {
+                    expense = loadedExpense;
+                }
+                else
+                {
+                    await DialogService.Alert("Expense not found", "Error");
+                    NavigateBack();
+                }
+            }
+            catch (Exception ex)
+            {
+                await DialogService.Alert($"Error loading expense: {ex.Message}", "Error");
+                NavigateBack();
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+        else
+        {
+            // Default for new expense
+            expense.Date = DateTime.Today;
+            expense.Category = "Other";
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSaving = true;
+        try
+        {
+            if (Id.HasValue)
+            {
+                await ExpenseService.UpdateExpenseAsync(expense);
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Success",
+                    Detail = "Expense updated successfully",
+                    Duration = 4000
+                });
+            }
+            else
+            {
+                await ExpenseService.AddExpenseAsync(expense);
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Success",
+                    Detail = "Expense added successfully",
+                    Duration = 4000
+                });
+            }
+            NavigateBack();
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert($"Error saving expense: {ex.Message}", "Error");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void NavigateBack()
+    {
+        NavigationManager.NavigateTo("/expenses");
+    }
+}

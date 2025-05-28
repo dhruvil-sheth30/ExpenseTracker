@@ -1,0 +1,117 @@
+@page "/"
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Welcome - Expense Tracker</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="container mt-5">
+            <div class="row mb-4">
+                <div class="col-md-12 text-center">
+                    <h1 class="display-4">Welcome to Your Expense Dashboard</h1>
+                    <p class="lead">You are logged in and ready to manage your expenses.</p>
+                </div>
+            </div>
+            
+            <div class="row justify-content-center">
+                <div class="col-md-10">
+                    <div class="row row-cols-1 row-cols-md-3 g-4">
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-graph-up text-primary" style="font-size: 3rem;"></i>
+                                    <h4 class="card-title mt-3">Dashboard</h4>
+                                    <p class="card-text">View your expense summary and analytics</p>
+                                    <a href="dashboard" class="btn btn-primary mt-2">
+                                        <i class="bi bi-bar-chart me-1"></i> Go to Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-cash-coin text-success" style="font-size: 3rem;"></i>
+                                    <h4 class="card-title mt-3">Expenses</h4>
+                                    <p class="card-text">View and manage all your expense records</p>
+                                    <a href="expenses" class="btn btn-success mt-2">
+                                        <i class="bi bi-list-ul me-1"></i> View Expenses
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-plus-circle text-info" style="font-size: 3rem;"></i>
+                                    <h4 class="card-title mt-3">Add New</h4>
+                                    <p class="card-text">Record a new expense transaction</p>
+                                    <a href="expenses/add" class="btn btn-info text-white mt-2">
+                                        <i class="bi bi-plus-lg me-1"></i> Add Expense
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-8 text-center">
+                    <h1 class="display-4 mb-4">Welcome to Expense Tracker</h1>
+                    <p class="lead mb-5">Take control of your finances with our easy-to-use expense tracking solution.</p>
+                    
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-4">
+                            <div class="card h-100 shadow-sm border-0">
+                                <div class="card-body text-center py-4">
+                                    <i class="bi bi-graph-up text-primary display-4"></i>
+                                    <h5 class="card-title mt-3">Track Expenses</h5>
+                                    <p class="card-text">Monitor your spending habits with detailed expense tracking.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100 shadow-sm border-0">
+                                <div class="card-body text-center py-4">
+                                    <i class="bi bi-pie-chart text-success display-4"></i>
+                                    <h5 class="card-title mt-3">Visualize Data</h5>
+                                    <p class="card-text">Get insights with beautiful charts and reports.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100 shadow-sm border-0">
+                                <div class="card-body text-center py-4">
+                                    <i class="bi bi-shield-check text-info display-4"></i>
+                                    <h5 class="card-title mt-3">Secure & Private</h5>
+                                    <p class="card-text">Your financial data is kept safe and secure.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                        <a href="register" class="btn btn-primary btn-lg px-4 gap-3">
+                            <i class="bi bi-person-plus me-1"></i> Get Started
+                        </a>
+                        <a href="login" class="btn btn-outline-secondary btn-lg px-4">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private void GoToDashboard()
+    {
+        NavigationManager.NavigateTo("/dashboard");
+    }
+}

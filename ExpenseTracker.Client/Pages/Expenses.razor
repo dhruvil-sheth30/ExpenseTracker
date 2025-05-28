@@ -1,0 +1,223 @@
+@page "/expenses"
+@attribute [Authorize]
+@using ExpenseTracker.Shared.Models
+@inject IExpenseService ExpenseService
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<PageTitle>Expenses - Expense Tracker</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="bi bi-cash-coin me-2"></i> My Expenses</h3>
+    <div>
+        <a href="/dashboard" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-graph-up me-1"></i> Dashboard
+        </a>
+        <a href="/expenses/add" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Add New Expense
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-funnel me-2"></i> Filter Expenses</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+                    <input type="date" class="form-control" @bind="startDate" placeholder="From date" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+                    <input type="date" class="form-control" @bind="endDate" placeholder="To date" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-tag"></i></span>
+                    <select class="form-select" @bind="selectedCategory">
+                        <option value="">All Categories</option>
+                        @foreach (var category in categories)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-primary me-2" @onclick="FilterExpenses">
+                    <i class="bi bi-funnel-fill me-1"></i> Apply Filters
+                </button>
+                <button class="btn btn-outline-secondary" @onclick="ResetFilters">
+                    <i class="bi bi-x-circle me-1"></i> Reset
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <span class="ms-2">Loading expenses...</span>
+    </div>
+}
+else if (expenses == null || !expenses.Any())
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle-fill me-2"></i> No expenses found. Click "Add New Expense" to create one.
+    </div>
+}
+else
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var expense in expenses)
+                        {
+                            <tr>
+                                <td>@expense.Title</td>
+                                <td>
+                                    <span class="badge rounded-pill" style="background-color: @GetCategoryColor(expense.Category)">
+                                        @expense.Category
+                                    </span>
+                                </td>
+                                <td>$@expense.Amount.ToString("F2")</td>
+                                <td>@expense.Date.ToShortDateString()</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info text-white me-1" @onclick="() => NavigateToEdit(expense.Id)" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" @onclick="() => ConfirmDelete(expense)" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <span>Showing @expenses.Count() expense(s)</span>
+                <span class="fw-bold">Total: $@expenses.Sum(e => e.Amount).ToString("F2")</span>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Expense>? expenses;
+    private bool isLoading = true;
+    private DateTime? startDate = DateTime.Now.AddMonths(-1);
+    private DateTime? endDate = DateTime.Now;
+    private string selectedCategory = "";
+    private List<string> categories = new List<string> 
+    { 
+        "Food", "Transport", "Entertainment", "Utilities", "Health", "Shopping", "Education", "Other" 
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadExpenses();
+    }
+
+    private async Task LoadExpenses()
+    {
+        isLoading = true;
+        try
+        {
+            expenses = (await ExpenseService.GetExpensesAsync(startDate, endDate, selectedCategory))?.ToList();
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert($"Error loading expenses: {ex.Message}", "Error");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task FilterExpenses()
+    {
+        await LoadExpenses();
+    }
+
+    private async Task ResetFilters()
+    {
+        startDate = DateTime.Now.AddMonths(-1);
+        endDate = DateTime.Now;
+        selectedCategory = "";
+        await LoadExpenses();
+    }
+
+    private void NavigateToEdit(int id)
+    {
+        NavigationManager.NavigateTo($"/expenses/edit/{id}");
+    }
+
+    private async Task ConfirmDelete(Expense expense)
+    {
+        var confirmed = await DialogService.Confirm(
+            $"Are you sure you want to delete '{expense.Title}'?", 
+            "Confirm Delete",
+            new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+            
+        if (confirmed == true)
+        {
+            try
+            {
+                await ExpenseService.DeleteExpenseAsync(expense.Id);
+                await LoadExpenses();
+                NotificationService.Notify(new NotificationMessage 
+                { 
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Success",
+                    Detail = "Expense deleted successfully",
+                    Duration = 4000
+                });
+            }
+            catch (Exception ex)
+            {
+                await DialogService.Alert($"Error deleting expense: {ex.Message}", "Error");
+            }
+        }
+    }
+
+    private string GetCategoryColor(string category)
+    {
+        return (category ?? "Other") switch
+        {
+            "Food" => "#4CAF50",
+            "Transport" => "#2196F3",
+            "Entertainment" => "#9C27B0",
+            "Utilities" => "#FF9800",
+            "Health" => "#E91E63",
+            "Shopping" => "#3F51B5",
+            "Education" => "#009688",
+            _ => "#607D8B"
+        };
+    }
+}

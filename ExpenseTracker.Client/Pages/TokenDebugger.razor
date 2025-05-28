@@ -1,0 +1,78 @@
+@page "/token-debugger"
+@inject ILocalStorageService LocalStorage
+@inject IJSRuntime JSRuntime
+@using System.Text
+@using System.Text.Json
+@using System.IdentityModel.Tokens.Jwt
+
+<h3>JWT Token Debugger</h3>
+
+<div class="row mb-3">
+    <div class="col">
+        <button class="btn btn-primary" @onclick="InspectToken">Inspect Token</button>
+        <button class="btn btn-danger" @onclick="ClearToken">Clear Token</button>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(tokenInfo))
+{
+    <div class="card">
+        <div class="card-header">
+            Token Information
+        </div>
+        <div class="card-body">
+            <pre>@tokenInfo</pre>
+        </div>
+    </div>
+}
+
+@code {
+    private string tokenInfo = "";
+
+    private async Task InspectToken()
+    {
+        try
+        {
+            var token = await LocalStorage.GetItemAsStringAsync("authToken");
+            
+            if (string.IsNullOrEmpty(token))
+            {
+                tokenInfo = "No token found in localStorage";
+                return;
+            }
+
+            var handler = new JwtSecurityTokenHandler();
+            if (!handler.CanReadToken(token))
+            {
+                tokenInfo = $"Invalid token format: {token}";
+                return;
+            }
+
+            var jsonToken = handler.ReadJwtToken(token);
+            var header = jsonToken.Header;
+            var payload = jsonToken.Payload;
+
+            var sb = new StringBuilder();
+            sb.AppendLine("TOKEN HEADER:");
+            sb.AppendLine(JsonSerializer.Serialize(header, new JsonSerializerOptions { WriteIndented = true }));
+            sb.AppendLine();
+            sb.AppendLine("TOKEN PAYLOAD:");
+            sb.AppendLine(JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
+            sb.AppendLine();
+            sb.AppendLine("TOKEN EXPIRY:");
+            sb.AppendLine(jsonToken.ValidTo.ToString("yyyy-MM-dd HH:mm:ss"));
+
+            tokenInfo = sb.ToString();
+        }
+        catch (Exception ex)
+        {
+            tokenInfo = $"Error inspecting token: {ex.Message}";
+        }
+    }
+
+    private async Task ClearToken()
+    {
+        await LocalStorage.RemoveItemAsync("authToken");
+        tokenInfo = "Token has been cleared from localStorage";
+    }
+}

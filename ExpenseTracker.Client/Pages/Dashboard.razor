@@ -1,0 +1,174 @@
+@page "/dashboard"
+@attribute [Authorize]
+@using ExpenseTracker.Shared.Models
+@inject IExpenseService ExpenseService
+@inject DialogService DialogService
+
+<PageTitle>Dashboard - Expense Tracker</PageTitle>
+
+<h3>Dashboard</h3>
+
+<div class="row mb-3">
+    <div class="col-md-3">
+        <div class="input-group">
+            <span class="input-group-text">From</span>
+            <input type="date" class="form-control" @bind="startDate" />
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="input-group">
+            <span class="input-group-text">To</span>
+            <input type="date" class="form-control" @bind="endDate" />
+        </div>
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-secondary" @onclick="LoadSummary">
+            <i class="bi bi-graph-up"></i> Update Dashboard
+        </button>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading dashboard data...</p>
+}
+else if (summary == null)
+{
+    <div class="alert alert-info">
+        No data available for the selected period.
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Expenses</h5>
+                    <h2 class="card-text">$@summary.TotalAmount.ToString("F2")</h2>
+                    <p>for the selected period</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Expenses by Category</h5>
+                </div>
+                <div class="card-body">
+                    @if (summary.CategoryTotals != null && summary.CategoryTotals.Any())
+                    {
+                        <ul class="list-group">
+                            @foreach (var category in summary.CategoryTotals.OrderByDescending(c => c.Amount))
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <span class="badge rounded-pill" style="background-color: @GetCategoryColor(category.Category)">
+                                            @category.Category
+                                        </span>
+                                    </span>
+                                    <span>
+                                        $@category.Amount.ToString("F2")
+                                        <span class="text-muted ms-2">
+                                            (@(Math.Round((category.Amount / summary.TotalAmount) * 100, 1))%)
+                                        </span>
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p>No category data available.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Monthly Totals</h5>
+                </div>
+                <div class="card-body">
+                    @if (summary.MonthlyTotals != null && summary.MonthlyTotals.Any())
+                    {
+                        <ul class="list-group">
+                            @foreach (var month in summary.MonthlyTotals.OrderByDescending(m => m.Month))
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>@FormatMonthYear(month.Month)</span>
+                                    <span>$@month.Amount.ToString("F2")</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p>No monthly data available.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private DateTime startDate = DateTime.Now.AddMonths(-3);
+    private DateTime endDate = DateTime.Now;
+    private bool isLoading = true;
+    private ExpenseSummary? summary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSummary();
+    }
+
+    private async Task LoadSummary()
+    {
+        isLoading = true;
+        try
+        {
+            summary = await ExpenseService.GetExpenseSummaryAsync(startDate, endDate);
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert($"Error loading summary: {ex.Message}", "Error");
+            summary = null;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetCategoryColor(string category)
+    {
+        return category switch
+        {
+            "Food" => "#4CAF50",
+            "Transport" => "#2196F3",
+            "Entertainment" => "#9C27B0",
+            "Utilities" => "#FF9800",
+            "Health" => "#E91E63",
+            "Shopping" => "#3F51B5",
+            "Education" => "#009688",
+            _ => "#607D8B"
+        };
+    }
+
+    private string FormatMonthYear(string monthYear)
+    {
+        if (DateTime.TryParse($"{monthYear}-01", out DateTime date))
+        {
+            return date.ToString("MMMM yyyy");
+        }
+        return monthYear;
+    }
+}

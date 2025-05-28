@@ -1,0 +1,71 @@
+## .NET Core
+bin/
+obj/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+**/bin/
+**/obj/
+
+## Rider
+.idea/
+*.sln.iml
+
+## User-specific files
+*.userprefs
+
+## Logs
+*.log
+logs/
+
+## Environment variables & secrets
+*.env
+appsettings.Production.json
+appsettings.Development.json
+.env
+.env.local
+secrets.json
+*.pfx
+*.key
+
+## Test data and API tests
+ExpenseTracker.API/api-test/
+bruno-tests/
+**/test-results/
+**/TestResults/
+
+## Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+## NPM
+node_modules/
+npm-debug.log
+package-lock.json
+yarn.lock
+yarn-error.log
+.pnpm-debug.log
+
+## Build
+wwwroot/dist/
+**/wwwroot/js/
+**/wwwroot/css/
+**/wwwroot/media/
+
+## Visual Studio for Mac
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+## Misc
+.DS_Store
+Thumbs.db
+Desktop.ini

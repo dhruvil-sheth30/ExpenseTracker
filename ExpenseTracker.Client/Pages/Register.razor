@@ -1,0 +1,119 @@
+@page "/register"
+@using ExpenseTracker.Shared.DTOs
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Register - Expense Tracker</PageTitle>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0">Create an Account</h3>
+                </div>
+                <div class="card-body p-4">
+                    <EditForm Model="registerModel" OnValidSubmit="HandleRegistration">
+                        <DataAnnotationsValidator />
+                        
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                @errorMessage
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(successMessage))
+                        {
+                            <div class="alert alert-success">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                @successMessage
+                            </div>
+                        }
+
+                        <div class="form-floating mb-3">
+                            <InputText id="username" @bind-Value="registerModel.Username" class="form-control" placeholder="Username" />
+                            <label for="username">Username</label>
+                            <ValidationMessage For="@(() => registerModel.Username)" class="text-danger" />
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <InputText id="email" @bind-Value="registerModel.Email" class="form-control" type="email" placeholder="Email" />
+                            <label for="email">Email</label>
+                            <ValidationMessage For="@(() => registerModel.Email)" class="text-danger" />
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <InputText id="password" @bind-Value="registerModel.Password" type="password" class="form-control" placeholder="Password" />
+                            <label for="password">Password</label>
+                            <ValidationMessage For="@(() => registerModel.Password)" class="text-danger" />
+                        </div>
+
+                        <div class="form-floating mb-4">
+                            <InputText id="confirmPassword" @bind-Value="registerModel.ConfirmPassword" type="password" class="form-control" placeholder="Confirm Password" />
+                            <label for="confirmPassword">Confirm Password</label>
+                            <ValidationMessage For="@(() => registerModel.ConfirmPassword)" class="text-danger" />
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" disabled="@isLoading">
+                                @if (isLoading)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    <span>Creating account...</span>
+                                }
+                                else
+                                {
+                                    <span><i class="bi bi-person-plus-fill me-2"></i>Register</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+
+                    <div class="text-center mt-4">
+                        <p>Already have an account? <a href="login" class="fw-bold text-primary">Login</a></p>
+                        <a href="/" class="btn btn-link">Back to Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private UserRegisterDto registerModel = new UserRegisterDto();
+    private bool isLoading = false;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    private async Task HandleRegistration()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+
+        try
+        {
+            var result = await AuthService.Register(registerModel);
+            if (result != null && result.Success)
+            {
+                successMessage = "Registration successful! Redirecting to login...";
+                await Task.Delay(2000); // Wait for 2 seconds
+                NavigationManager.NavigateTo("/login");
+            }
+            else
+            {
+                errorMessage = result?.Message ?? "Registration failed. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Registration failed: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
