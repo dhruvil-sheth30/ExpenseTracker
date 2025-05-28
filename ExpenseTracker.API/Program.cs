@@ -46,8 +46,15 @@ builder.Services.AddAuthentication(options =>
 var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? 
     builder.Configuration.GetConnectionString("DefaultConnection");
 
+// Update the database context configuration with retry logic
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString, sqlServerOptions =>
+    {
+        sqlServerOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null);
+    }));
 
 // Register application services
 builder.Services.AddScoped<IUserService, UserService>();
@@ -75,11 +82,31 @@ builder.Services.AddCors(options =>
 // Build the app
 var app = builder.Build();
 
+// Update the database initialization with error handling
 // Ensure the database is created and up to date
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.EnsureCreated(); // This creates the database and tables if they don't exist
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    try
+    {
+        logger.LogInformation("Attempting to ensure database is created...");
+        // Use a timeout for the database creation attempt
+        var task = Task.Run(() => dbContext.Database.EnsureCreated());
+        if (task.Wait(TimeSpan.FromSeconds(60)))
+        {
+            logger.LogInformation("Database check completed successfully.");
+        }
+        else
+        {
+            logger.LogWarning("Database creation check timed out, but the application will continue.");
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while ensuring the database exists. The application will continue, but some features might not work correctly.");
+    }
 }
 
 // Configure the HTTP request pipeline.
