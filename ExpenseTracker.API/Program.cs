@@ -59,11 +59,16 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins(builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? 
-                          new[] { "http://localhost:5173", "https://localhost:7001" })
+        policy.WithOrigins(
+                builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? 
+                new[] { 
+                    "http://localhost:5173", 
+                    "https://localhost:7001",
+                    "https://expensetracker-client.vercel.app", // Your deployed frontend URL
+                    "https://your-frontend-domain.com" 
+                })
               .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+              .AllowAnyHeader();
     });
 });
 
