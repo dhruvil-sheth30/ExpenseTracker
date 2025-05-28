@@ -18,7 +18,10 @@ namespace ExpenseTracker.API.Services
         public string GenerateToken(User user)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
-            var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
+            
+            // Get JWT key from environment variable first, then fall back to config
+            var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? jwtSettings["Key"];
+            var key = Encoding.UTF8.GetBytes(jwtKey);
 
             var claims = new List<Claim>
             {
@@ -31,10 +34,12 @@ namespace ExpenseTracker.API.Services
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.Now.AddMinutes(Convert.ToDouble(jwtSettings["DurationInMinutes"])),
+                Expires = DateTime.Now.AddMinutes(Convert.ToDouble(
+                    Environment.GetEnvironmentVariable("JWT_DURATION_MINUTES") ?? 
+                    jwtSettings["DurationInMinutes"])),
                 SigningCredentials = credentials,
-                Issuer = jwtSettings["Issuer"],
-                Audience = jwtSettings["Audience"]
+                Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? jwtSettings["Issuer"],
+                Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? jwtSettings["Audience"]
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
