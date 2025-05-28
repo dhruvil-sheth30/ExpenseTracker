@@ -9,7 +9,7 @@ services:
       - "5000:5000"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Server=db;Database=ExpenseTrackerDb;User=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;
+      - ConnectionStrings__DefaultConnection=Server=tcp:expensetracker-sqlserver.database.windows.net,1433;Initial Catalog=ExpenseTrackerDB;Persist Security Info=False;User ID=***PLACEHOLDER***;Password=***PLACEHOLDER***;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
 
   client:
     build:

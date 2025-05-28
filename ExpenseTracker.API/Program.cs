@@ -5,6 +5,20 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using DotNetEnv;
+
+// Explicitly load .env file from the application root directory
+var rootPath = Directory.GetCurrentDirectory();
+var envPath = Path.Combine(rootPath, ".env");
+if (File.Exists(envPath))
+{
+    Env.Load(envPath);
+    Console.WriteLine("Loaded environment variables from .env file");
+}
+else
+{
+    Console.WriteLine(".env file not found at: " + envPath);
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +35,8 @@ builder.Services.AddSwaggerGen(c =>
 // Update the JWT Configuration section to use environment variables
 // JWT Configuration
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? jwtSettings["Key"];
+var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? jwtSettings["Key"] ?? 
+    throw new InvalidOperationException("JWT Key is not configured");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -42,9 +57,10 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Use environment variable for ConnectionString if available
+// Replace hardcoded connection string with env var
 var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? 
-    builder.Configuration.GetConnectionString("DefaultConnection");
+    builder.Configuration.GetConnectionString("DefaultConnection") ?? 
+    throw new InvalidOperationException("Connection string not found in environment or configuration.");
 
 // Update the database context configuration with retry logic
 builder.Services.AddDbContext<AppDbContext>(options =>

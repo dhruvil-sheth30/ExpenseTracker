@@ -78,7 +78,7 @@ namespace ExpenseTracker.API.Controllers
 
             // Verify credentials
             var user = await _userService.GetUserByUsernameAsync(loginDto.Username);
-            if (user == null || !_userService.VerifyPassword(loginDto.Password, user.PasswordHash))
+            if (user == null || !_userService.VerifyPassword(loginDto.Password ?? string.Empty, user.PasswordHash))
             {
                 return Unauthorized(new AuthResponseDto 
                 { 

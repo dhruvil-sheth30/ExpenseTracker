@@ -40,5 +40,19 @@ namespace ExpenseTracker.API.Controllers
                 ConfigurationValues = configValues
             });
         }
+
+        [HttpGet("env-status")]
+        [AllowAnonymous] // Allow unauthenticated access for easier debugging
+        public IActionResult CheckEnvironmentStatus()
+        {
+            return Ok(new
+            {
+                ApiStatus = "Running",
+                EnvironmentLoaded = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("JWT_SECRET")),
+                Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+                ApiUrl = Environment.GetEnvironmentVariable("API_URL"),
+                ClientUrl = Environment.GetEnvironmentVariable("CLIENT_URL"),
+            });
+        }
     }
 }

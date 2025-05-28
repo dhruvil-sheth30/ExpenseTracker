@@ -26,15 +26,14 @@ namespace ExpenseTracker.API.Controllers
                 // Try to connect to the database
                 bool canConnect = await _context.Database.CanConnectAsync();
 
-                // Return the connection string (masked) for debugging
-                string connectionString = _configuration.GetConnectionString("DefaultConnection") ?? "Not configured";
-                string maskedConnectionString = MaskConnectionString(connectionString);
+                // Hardcoded connection string (masked for security)
+                string connectionString = "[REDACTED FOR SECURITY]";
 
                 return Ok(new
                 {
                     Success = canConnect,
                     Message = canConnect ? "Successfully connected to the database" : "Failed to connect to the database",
-                    ConnectionString = maskedConnectionString
+                    ConnectionString = connectionString
                 });
             }
             catch (Exception ex)

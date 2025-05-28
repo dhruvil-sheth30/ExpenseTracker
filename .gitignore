@@ -23,13 +23,17 @@ logs/
 
 ## Environment variables & secrets
 *.env
-appsettings.Production.json
-appsettings.Development.json
+appsettings.*.json
+appsettings.json
 .env
 .env.local
+.env.development
 secrets.json
 *.pfx
 *.key
+**/Properties/launchSettings.json
+docker-compose.yml
+docker-compose.*.yml
 
 ## Test data and API tests
 ExpenseTracker.API/api-test/

@@ -15,25 +15,17 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Add Authentication and Authorization services
+// Add configuration for appsettings.json
+builder.Services.AddScoped(sp => sp.GetRequiredService<IConfiguration>());
+
+// Set up HttpClient with API_URL from configuration
+var apiUrl = builder.Configuration["ApiUrl"] ?? "http://localhost:5000";
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiUrl) });
+
+// Add Authentication and Authorization
 builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
-
-// Register the Auth Handler
-builder.Services.AddScoped<AuthHeaderHandler>();
-
-// Configure HttpClient with Auth Handler
-builder.Services.AddScoped(sp => {
-    var handler = sp.GetRequiredService<AuthHeaderHandler>();
-    handler.InnerHandler = new HttpClientHandler();
-    
-    var httpClient = new HttpClient(handler) { 
-        BaseAddress = new Uri("http://localhost:5000") 
-    };
-    
-    return httpClient;
-});
 
 // Register Services
 builder.Services.AddScoped<IAuthService, AuthService>();

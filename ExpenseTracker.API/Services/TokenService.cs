@@ -20,7 +20,10 @@ namespace ExpenseTracker.API.Services
             var jwtSettings = _configuration.GetSection("JwtSettings");
             
             // Get JWT key from environment variable first, then fall back to config
-            var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? jwtSettings["Key"];
+            var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? 
+                jwtSettings["Key"] ?? 
+                throw new InvalidOperationException("JWT Key is not configured");
+
             var key = Encoding.UTF8.GetBytes(jwtKey);
 
             var claims = new List<Claim>
